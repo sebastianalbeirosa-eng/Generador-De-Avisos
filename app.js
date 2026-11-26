@@ -211,7 +211,7 @@
         customAreas: []
       },
       reports: [],
-      meta: { nextId: 1 }
+      meta: { nextId: 1, cleanStart1: true }
     };
   }
 
@@ -219,6 +219,7 @@
   /* 3. ALMACENAMIENTO                                                   */
   /* ------------------------------------------------------------------ */
 
+  var pendingCleanStart = false;
   var state = loadState();
 
   function loadState() {
@@ -272,34 +273,23 @@
         });
       }
       merged.reports = merged.reports.map(normalizeReport);
-      var legacySeeded = merged.meta.seeded === true;
-      if (legacySeeded) {
-        var legacyDemoAccounts = {
-          "2041": "Marcos Ferreyra",
-          "3187": "Lucía Benítez",
-          "1120": "Ramón Sosa",
-          "2874": "Diego Arce",
-          "4410": "Sofía Quiroga",
-          "1963": "Hugo Márquez",
-          "3577": "Nadia Peralta"
-        };
-        merged.reports = merged.reports.filter(function (report) {
-          return legacyDemoAccounts[report.employeeId] !== report.employeeName;
-        });
-        delete merged.meta.seeded;
+      delete merged.meta.seeded;
+      // Arranque limpio (una sola vez): borra los avisos de prueba cargados durante el desarrollo
+      if (!merged.meta.cleanStart1) {
+        merged.reports = [];
+        merged.meta.nextId = 1;
+        merged.meta.cleanStart1 = true;
+        pendingCleanStart = true;
+        try {
+          localStorage.removeItem(LS_OPERATOR);
+          localStorage.setItem(LS_KEY, JSON.stringify(merged));
+        } catch (cleanErr) { /* sin persistencia */ }
       }
       var maxId = merged.reports.reduce(function (acc, r) { return Math.max(acc, Number(r.id) || 0); }, 0);
       merged.meta.nextId = Math.max(Number(merged.meta.nextId) || 1, maxId + 1);
-      if (legacySeeded) {
-        try {
-          localStorage.setItem(LS_KEY, JSON.stringify(merged));
-        } catch (migrationErr) {
-          console.warn("[PrensaAlerta] no se pudo guardar la limpieza de avisos de demostración", migrationErr);
-        }
-      }
       return merged;
     } catch (err) {
-      console.warn("[PrensaAlerta] no se pudo leer el almacenamiento", err);
+      console.warn("[AvisoEnLinea] no se pudo leer el almacenamiento", err);
       return base;
     }
   }
@@ -323,7 +313,7 @@
       localStorage.setItem(LS_KEY, JSON.stringify(state));
       return true;
     } catch (err) {
-      console.error("[PrensaAlerta] almacenamiento lleno", err);
+      console.error("[AvisoEnLinea] almacenamiento lleno", err);
       toast("No pudimos guardar: el almacenamiento del navegador está lleno. Exportá un respaldo y liberá espacio.", "error");
       return false;
     }
@@ -358,7 +348,7 @@
         tx.oncomplete = function () { resolve(true); };
         tx.onerror = function () { reject(tx.error); };
       });
-    }).catch(function (err) { console.warn("[PrensaAlerta] foto no guardada en IndexedDB", err); return false; });
+    }).catch(function (err) { console.warn("[AvisoEnLinea] foto no guardada en IndexedDB", err); return false; });
   }
 
   function idbGet(key) {
@@ -1029,26 +1019,6 @@
       kpiRoot.innerHTML = kpis.map(function (k) {
         return '<div class="kpi-cell ' + k.tone + '"><small>' + esc(k.label) + "</small><b>" + esc(k.value) + "</b><span>" + esc(k.hint) + "</span></div>";
       }).join("");
-    }
-
-    var sample = state.reports[0];
-    var heroRoot = $("#hero-sample");
-    if (heroRoot) {
-      if (!sample) {
-        heroRoot.innerHTML = '<p class="muted-sm" style="padding:14px 0">Todavía no hay avisos registrados. Cargá el primero desde el botón de arriba.</p>';
-      } else {
-        heroRoot.innerHTML =
-          '<div class="mini-report-top"><div><div class="mini-code">' + esc(sample.code) + "</div>" +
-          '<div class="mini-equip">' + esc(sample.equipment) + "</div>" +
-          '<div class="mini-meta">' + esc(rel(sample.createdAt)) + " · " + esc(sample.employeeName) + "</div></div>" +
-          '<div class="mini-badges">' + badgeType(sample.type) + badgeSeverity(sample.severity) + "</div></div>" +
-          (sample.photos.length ? photoHtml(sample.photos[0], "mini-photo") : "") +
-          '<p class="mini-desc">' + esc(sample.description) + "</p>" +
-          '<div class="mini-foot"><span>Plazo ' + esc(fmtDT(sample.dueAt)) + "</span>" + badgeStatus(sample.status) + "</div>" +
-          '<div class="mini-wa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.5 11.6a8.4 8.4 0 0 1-12.4 7.4L3.5 20.5l1.6-4.6a8.4 8.4 0 1 1 15.4-4.3Z"/></svg>' +
-          (sample.whatsappSentAt ? "Aviso derivado al área + registro en bitácora" : "Aviso listo para derivar al área") + "</div>";
-        hydratePhotos(heroRoot);
-      }
     }
 
     var recentRoot = $("#landing-recent");
@@ -2948,6 +2918,7 @@
   }
 
   function init() {
+    if (pendingCleanStart) idbClear();
     wireStatic();
     initWizard();
     initTrazaSelects();
