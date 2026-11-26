@@ -182,7 +182,7 @@ code { font-family: var(--mono); }
   background: var(--ink-900); padding: 10px 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, .1); gap: 2px;
 }
 .mainnav.open a { padding: 11px 12px; font-size: 14px; }
-.desktop-only-cta { display: none; }
+.btn.desktop-only-cta { display: none; }
 .mainnav .nav-cta-mobile {
   display: block; margin-top: 6px; text-align: center; font-weight: 800;
   background: var(--safety-500); color: var(--ink-950);
@@ -194,7 +194,7 @@ code { font-family: var(--mono); }
   .mainnav { display: flex; }
   .nav-toggle { display: none; }
   .session-user { display: inline-flex; }
-  .desktop-only-cta { display: inline-flex; }
+  .btn.desktop-only-cta { display: inline-flex; }
   .mainnav .nav-cta-mobile { display: none; }
 }
 
