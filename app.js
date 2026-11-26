@@ -2632,7 +2632,14 @@
     var newId = "cat-" + uid();
     state.settings.customAreas.push({ id: newId, label: label });
     saveState();
-    if (sb) sb.from("custom_areas").upsert({ id: newId, label: label }, { onConflict: "id" });
+    if (sb) {
+      sb.from("custom_areas").upsert({ id: newId, label: label }, { onConflict: "id" }).then(function (res) {
+        if (res.error) {
+          console.error("[Supabase] custom_areas upsert error", res.error);
+          toast("Error al guardar rol en Supabase: " + (res.error.message || ""), "error");
+        }
+      });
+    }
     if (input) input.value = "";
     populateSupAreaSelect();
     if ($("#sup-area")) $("#sup-area").value = newId;
@@ -2675,7 +2682,14 @@
     };
     state.settings.supervisors.push(newSup);
     saveState();
-    if (sb) sb.from("supervisors").upsert(newSup, { onConflict: "id" });
+    if (sb) {
+      sb.from("supervisors").upsert(newSup, { onConflict: "id" }).then(function (res) {
+        if (res.error) {
+          console.error("[Supabase] supervisors upsert error", res.error);
+          toast("Error al guardar supervisor en Supabase: " + (res.error.message || ""), "error");
+        }
+      });
+    }
     if ($("#sup-name")) $("#sup-name").value = "";
     if ($("#sup-phone")) $("#sup-phone").value = "";
     renderSupervisorsList();
@@ -3025,7 +3039,14 @@
       if (used) { toast("Primero quitá los supervisores asignados a este rol.", "warn"); return; }
       state.settings.customAreas = (state.settings.customAreas || []).filter(function (c) { return c.id !== areaId; });
       saveState();
-      if (sb) sb.from("custom_areas").delete().eq("id", areaId);
+      if (sb) {
+        sb.from("custom_areas").delete().eq("id", areaId).then(function (res) {
+          if (res.error) {
+            console.error("[Supabase] custom_areas delete error", res.error);
+            toast("Error al eliminar rol en Supabase: " + (res.error.message || ""), "error");
+          }
+        });
+      }
       populateSupAreaSelect();
       renderCustomAreasList();
       toast("Categoría eliminada.", "ok");
@@ -3037,7 +3058,14 @@
       var supId = removeSup.getAttribute("data-remove-sup");
       state.settings.supervisors = (state.settings.supervisors || []).filter(function (s) { return s.id !== supId; });
       saveState();
-      if (sb) sb.from("supervisors").delete().eq("id", supId);
+      if (sb) {
+        sb.from("supervisors").delete().eq("id", supId).then(function (res) {
+          if (res.error) {
+            console.error("[Supabase] supervisors delete error", res.error);
+            toast("Error al eliminar supervisor en Supabase: " + (res.error.message || ""), "error");
+          }
+        });
+      }
       renderSupervisorsList();
       renderConfig();
       toast("Supervisor eliminado.", "ok");
