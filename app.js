@@ -1201,6 +1201,8 @@
     var klass = cls ? ' class="' + esc(cls) + '"' : "";
     var alt = esc(photo.caption || "Evidencia del aviso");
     if (photo.inline) return '<img src="' + esc(photo.inline) + '" alt="' + alt + '"' + klass + " />";
+    var cached = photoCache[photo.id];
+    if (cached) return '<img src="' + esc(cached) + '" alt="' + alt + '"' + klass + " />";
     return '<img data-photo="' + esc(photo.id) + '" src="' + FALLBACK_PHOTO + '" alt="' + alt + '"' + klass + " />";
   }
 
