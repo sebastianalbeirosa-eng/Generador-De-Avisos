@@ -358,12 +358,19 @@
         var tx = db.transaction(DB_STORE, "readonly");
         var req = tx.objectStore(DB_STORE).get(key);
         req.onsuccess = function () {
-          if (req.result) photoCache[key] = req.result;
-          resolve(req.result || "");
+          if (req.result) {
+            photoCache[key] = req.result;
+            resolve(req.result);
+          } else {
+            resolve("");
+          }
         };
         req.onerror = function () { reject(req.error); };
       });
-    }).catch(function () { return ""; });
+    }).catch(function () { return ""; }).then(function (localVal) {
+      if (localVal) return localVal;
+      return sbGetPhotoUrl(key);
+    });
   }
 
   function idbDel(key) {
@@ -388,6 +395,304 @@
         tx.onerror = function () { resolve(false); };
       });
     }).catch(function () { return false; });
+  }
+
+  /* -------------------------- Supabase (nube) ----------------------- */
+
+  var SUPABASE_URL = "https://yixkwiczpsamrejtqodk.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_FiUMwaQ9mJdUafVYoBw2nQ_gUzwJY5C";
+  var SUPABASE_BUCKET = "avisos-fotos";
+  var sb = (window.supabase && typeof window.supabase.createClient === "function")
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+    : null;
+
+  function dataUrlToBlob(dataUrl) {
+    var parts = String(dataUrl || "").split(",");
+    var mimeMatch = (parts[0] || "").match(/:(.*?);/);
+    var mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    var bstr = atob(parts[1] || "");
+    var n = bstr.length;
+    var u8 = new Uint8Array(n);
+    while (n--) u8[n] = bstr.charCodeAt(n);
+    return new Blob([u8], { type: mime });
+  }
+
+  function sbPublicUrl(storagePath) {
+    if (!sb || !storagePath) return "";
+    var res = sb.storage.from(SUPABASE_BUCKET).getPublicUrl(storagePath);
+    return (res && res.data && res.data.publicUrl) ? res.data.publicUrl : "";
+  }
+
+  function sbGetPhotoUrl(photoId) {
+    if (!sb || !photoId) return Promise.resolve("");
+    if (photoCache[photoId]) return Promise.resolve(photoCache[photoId]);
+    return sb.from("report_photos").select("storage_path").eq("id", photoId).maybeSingle()
+      .then(function (res) {
+        if (res.error || !res.data || !res.data.storage_path) return "";
+        var url = sbPublicUrl(res.data.storage_path);
+        if (url) photoCache[photoId] = url;
+        return url;
+      }).catch(function () { return ""; });
+  }
+
+  function sbUploadPhoto(reportId, reportCode, photoId, kind, dataUrl) {
+    if (!sb || !reportId || !dataUrl) return Promise.resolve(false);
+    var path = String(reportCode || reportId) + "/" + photoId + ".jpg";
+    var blob = dataUrlToBlob(dataUrl);
+    return sb.storage.from(SUPABASE_BUCKET).upload(path, blob, {
+      contentType: blob.type || "image/jpeg",
+      upsert: true
+    }).then(function (upRes) {
+      if (upRes.error) { console.warn("[Supabase] upload error", upRes.error); return false; }
+      return sb.from("report_photos").upsert({
+        id: photoId,
+        report_id: reportId,
+        kind: kind || "reporte",
+        storage_path: path
+      }, { onConflict: "id" }).then(function (dbRes) {
+        if (dbRes.error) { console.warn("[Supabase] report_photos error", dbRes.error); return false; }
+        var url = sbPublicUrl(path);
+        if (url) photoCache[photoId] = url;
+        return true;
+      });
+    }).catch(function (err) {
+      console.warn("[Supabase] photo exception", err);
+      return false;
+    });
+  }
+
+  function sbReportRowToLocal(row, eventsByReport, photosByReport) {
+    var evs = (eventsByReport[row.id] || []).map(function (ev) {
+      return {
+        action: ev.action,
+        author: ev.author,
+        note: ev.note,
+        toStatus: ev.to_status || null,
+        at: ev.created_at
+      };
+    });
+    var phs = (photosByReport[row.id] || []).map(function (ph) {
+      var url = sbPublicUrl(ph.storage_path);
+      if (url) photoCache[ph.id] = url;
+      return {
+        id: ph.id,
+        kind: ph.kind || "reporte",
+        caption: ph.kind === "cierre" ? "Evidencia de cierre" : "",
+        storagePath: ph.storage_path
+      };
+    });
+    return normalizeReport({
+      _sbId: row.id,
+      id: row.id,
+      code: row.code,
+      employeeName: row.employee_name,
+      employeeId: row.employee_id,
+      operatorSector: row.operator_sector,
+      shift: row.shift,
+      phone: row.phone,
+      type: row.type,
+      severity: row.severity,
+      equipment: row.equipment,
+      location: row.location,
+      description: row.description,
+      status: row.status,
+      assignedTo: row.assigned_to,
+      resolution: row.resolution,
+      resolvedAt: row.resolved_at,
+      whatsappSentAt: row.whatsapp_sent_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      dueAt: row.due_at,
+      recipients: Array.isArray(row.recipients) ? row.recipients : [],
+      photos: phs,
+      events: evs
+    });
+  }
+
+  function sbResolveReportId(code) {
+    var rep = getReport(code);
+    if (rep && rep._sbId) return Promise.resolve(rep._sbId);
+    if (!sb) return Promise.resolve(null);
+    return sb.from("reports").select("id").eq("code", code).maybeSingle()
+      .then(function (res) {
+        var id = res && res.data ? res.data.id : null;
+        if (rep && id) rep._sbId = id;
+        return id;
+      }).catch(function () { return null; });
+  }
+
+  function sbInsertEvents(reportId, events) {
+    if (!sb || !reportId || !events || !events.length) return Promise.resolve(false);
+    var rows = events.map(function (ev) {
+      return {
+        report_id: reportId,
+        action: ev.action || "comentario",
+        author: ev.author || "Sistema",
+        note: ev.note || "",
+        to_status: ev.toStatus || null,
+        created_at: ev.at || iso(new Date())
+      };
+    });
+    return sb.from("report_events").insert(rows).then(function (res) {
+      if (res.error) { console.warn("[Supabase] insert events error", res.error); return false; }
+      return true;
+    }).catch(function () { return false; });
+  }
+
+  function sbSyncNewReport(report, photoEntries) {
+    if (!sb || !report) return Promise.resolve(false);
+    var payload = {
+      code: report.code,
+      employee_name: report.employeeName,
+      employee_id: report.employeeId || "",
+      operator_sector: report.operatorSector,
+      shift: report.shift,
+      phone: report.phone || "",
+      type: report.type,
+      severity: report.severity,
+      equipment: report.equipment,
+      location: report.location || "",
+      description: report.description,
+      status: report.status,
+      assigned_to: report.assignedTo || "",
+      resolution: report.resolution || "",
+      resolved_at: report.resolvedAt || null,
+      whatsapp_sent_at: report.whatsappSentAt || null,
+      due_at: report.dueAt,
+      recipients: report.recipients || [],
+      created_at: report.createdAt,
+      updated_at: report.updatedAt
+    };
+
+    var insertTry = function (p) {
+      return sb.from("reports").insert(p).select("id, code").single();
+    };
+
+    return insertTry(payload).then(function (res) {
+      if (res.error && res.error.code === "23505") {
+        // Si otro dispositivo usó el mismo código en paralelo, dejar que Postgres genere uno nuevo
+        var retryPayload = Object.assign({}, payload, { code: "" });
+        return insertTry(retryPayload);
+      }
+      return res;
+    }).then(function (res) {
+      if (res.error || !res.data) {
+        console.warn("[Supabase] insert report error", res.error);
+        toast("Aviso guardado localmente (sin conexión a Supabase).", "warn");
+        return false;
+      }
+      var oldCode = report.code;
+      report._sbId = res.data.id;
+      report.id = res.data.id;
+      if (res.data.code && res.data.code !== oldCode) {
+        report.code = res.data.code;
+        if ($("#success-code")) $("#success-code").textContent = report.code;
+        if ($("#success-tracking")) $("#success-tracking").setAttribute("href", "#/aviso/" + encodeURIComponent(report.code));
+      }
+      saveState(true);
+      var evJob = sbInsertEvents(report._sbId, report.events || []);
+      var phJobs = (photoEntries || []).map(function (pe) {
+        return sbUploadPhoto(report._sbId, report.code, pe.id, "reporte", pe.dataUrl);
+      });
+      return Promise.all([evJob].concat(phJobs)).then(function () { return true; });
+    }).catch(function (err) {
+      console.warn("[Supabase] sync new report exception", err);
+      return false;
+    });
+  }
+
+  function sbUpdateReport(report, patch, event) {
+    if (!sb || !report) return Promise.resolve(false);
+    var upd = { updated_at: report.updatedAt || iso(new Date()) };
+    if (patch.status !== undefined) upd.status = patch.status;
+    if (patch.assignedTo !== undefined) upd.assigned_to = patch.assignedTo;
+    if (patch.resolution !== undefined) upd.resolution = patch.resolution;
+    if (patch.resolvedAt !== undefined) upd.resolved_at = patch.resolvedAt;
+    if (patch.whatsappSentAt !== undefined) upd.whatsapp_sent_at = patch.whatsappSentAt;
+    if (patch.recipients !== undefined) upd.recipients = patch.recipients;
+
+    return sb.from("reports").update(upd).eq("code", report.code).select("id").maybeSingle()
+      .then(function (res) {
+        if (res.error) { console.warn("[Supabase] update report error", res.error); return false; }
+        var rId = (res.data && res.data.id) || report._sbId;
+        if (rId) report._sbId = rId;
+        if (event && rId) {
+          var latest = report.events[report.events.length - 1];
+          return sbInsertEvents(rId, [latest || event]);
+        }
+        return true;
+      }).catch(function () { return false; });
+  }
+
+  function sbDeleteReport(report) {
+    if (!sb || !report) return Promise.resolve(false);
+    var paths = (report.photos || []).map(function (p) { return p.storagePath || (report.code + "/" + p.id + ".jpg"); });
+    var storageJob = paths.length ? sb.storage.from(SUPABASE_BUCKET).remove(paths) : Promise.resolve();
+    return storageJob.catch(function () { }).then(function () {
+      return sb.from("reports").delete().eq("code", report.code);
+    }).then(function (res) {
+      if (res && res.error) console.warn("[Supabase] delete report error", res.error);
+      return true;
+    }).catch(function () { return false; });
+  }
+
+  function syncFromSupabase() {
+    if (!sb) return Promise.resolve(false);
+    return Promise.all([
+      sb.from("reports").select("*").order("created_at", { ascending: false }),
+      sb.from("report_events").select("*").order("created_at", { ascending: true }),
+      sb.from("report_photos").select("*").order("created_at", { ascending: true }),
+      sb.from("supervisors").select("*").order("created_at", { ascending: true }),
+      sb.from("custom_areas").select("*").order("created_at", { ascending: true })
+    ]).then(function (results) {
+      var repRes = results[0], evRes = results[1], phRes = results[2], supRes = results[3], areaRes = results[4];
+      if (repRes.error) {
+        console.warn("[Supabase] sync error", repRes.error);
+        return false;
+      }
+
+      var eventsByReport = {};
+      if (!evRes.error && Array.isArray(evRes.data)) {
+        evRes.data.forEach(function (ev) {
+          if (!eventsByReport[ev.report_id]) eventsByReport[ev.report_id] = [];
+          eventsByReport[ev.report_id].push(ev);
+        });
+      }
+
+      var photosByReport = {};
+      if (!phRes.error && Array.isArray(phRes.data)) {
+        phRes.data.forEach(function (ph) {
+          if (!photosByReport[ph.report_id]) photosByReport[ph.report_id] = [];
+          photosByReport[ph.report_id].push(ph);
+        });
+      }
+
+      state.reports = (repRes.data || []).map(function (row) {
+        return sbReportRowToLocal(row, eventsByReport, photosByReport);
+      });
+
+      var maxId = state.reports.reduce(function (acc, r) { return Math.max(acc, Number(r.id) || 0); }, 0);
+      state.meta.nextId = Math.max(Number(state.meta.nextId) || 1, maxId + 1);
+
+      if (!supRes.error && Array.isArray(supRes.data)) {
+        state.settings.supervisors = supRes.data.map(function (s) {
+          return { id: s.id, name: s.name, area: s.area, shift: s.shift || "Todos los turnos", phone: s.phone || "" };
+        });
+      }
+      if (!areaRes.error && Array.isArray(areaRes.data)) {
+        state.settings.customAreas = areaRes.data.map(function (a) {
+          return { id: a.id, label: a.label };
+        });
+      }
+
+      saveState(true);
+      route();
+      renderSessionBox();
+      return true;
+    }).catch(function (err) {
+      console.warn("[Supabase] sync exception", err);
+      return false;
+    });
   }
 
   /* ------------------------------------------------------------------ */
@@ -456,6 +761,7 @@
     report.updatedAt = iso(new Date());
     if (event) addEvent(report, event.action, event.author, event.note, event.toStatus);
     saveState();
+    sbUpdateReport(report, patch, event);
     return report;
   }
 
@@ -528,8 +834,8 @@
     } catch (err) { return null; }
   }
 
-  function login(role) {
-    var data = { role: role, exp: new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString() };
+  function login(role, pin) {
+    var data = { role: role, pin: pin || "", exp: new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString() };
     sessionStorage.setItem(SS_SESSION, JSON.stringify(data));
     renderSessionBox();
   }
@@ -1449,11 +1755,14 @@
 
     var submitBtn = $("#btn-submit");
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Registrando…"; }
-    Promise.all(photoEntries.map(function (pe, idx) {
-      return idbPut(pe.id, pe.dataUrl).then(function (ok) {
-        if (!ok && report.photos[idx]) report.photos[idx].inline = pe.dataUrl;
-      });
-    })).then(function () {
+    Promise.all([
+      sbSyncNewReport(report, photoEntries),
+      Promise.all(photoEntries.map(function (pe, idx) {
+        return idbPut(pe.id, pe.dataUrl).then(function (ok) {
+          if (!ok && report.photos[idx]) report.photos[idx].inline = pe.dataUrl;
+        });
+      }))
+    ]).then(function () {
       saveState();
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Registrar aviso"; }
     });
@@ -1736,36 +2045,57 @@
     var role = loginRole;
     var pin = (($("#login-pin") || {}).value || "").trim();
     var errorEl = $("#login-error");
-    var rolePins = (state.settings && state.settings.rolePins) || {};
-    var expected = String(rolePins[role] || state.settings.pin || "Sanjuan1").trim();
+    var submitBtn = $("#login-form button[type='submit']");
 
-    var isMatch = false;
-    if (pin) {
-      // Si la contraseña guardada tiene mayúsculas/formato nuevo, validar respetando mayúsculas
-      if (/[A-ZÁÉÍÓÚÑ]/.test(expected)) {
-        isMatch = (pin === expected);
-      } else {
-        isMatch = (pin.toLowerCase() === expected.toLowerCase());
+    function finishLogin(ok) {
+      if (submitBtn) { submitBtn.disabled = false; }
+      if (!ok) {
+        if (errorEl) {
+          errorEl.textContent = role === "admin"
+            ? "Contraseña de Administrador incorrecta."
+            : "Contraseña incorrecta para " + ROLES[role].label + ". Respetá mayúsculas y números (si la olvidaste, pedile recuperación al Administrador).";
+          errorEl.classList.add("visible");
+        }
+        return;
       }
-      // Llaves de rescate solo para Administrador
-      if (!isMatch && role === "admin") {
-        var rescues = ["sanjuan1", "sanjuan", "admin", "1234"];
-        if (rescues.indexOf(pin.toLowerCase()) !== -1) isMatch = true;
-      }
+      login(role, pin);
+      toast("Bienvenido: " + ROLES[role].label, "ok");
+      location.hash = "#/panel";
     }
 
-    if (!isMatch) {
-      if (errorEl) {
-        errorEl.textContent = role === "admin"
-          ? "Contraseña de Administrador incorrecta."
-          : "Contraseña incorrecta para " + ROLES[role].label + ". Respetá mayúsculas y números (si la olvidaste, pedile recuperación al Administrador).";
-        errorEl.classList.add("visible");
+    function localFallback() {
+      var rolePins = (state.settings && state.settings.rolePins) || {};
+      var expected = String(rolePins[role] || state.settings.pin || "Sanjuan1").trim();
+      var isMatch = false;
+      if (pin) {
+        if (/[A-ZÁÉÍÓÚÑ]/.test(expected)) isMatch = (pin === expected);
+        else isMatch = (pin.toLowerCase() === expected.toLowerCase());
+        if (!isMatch && role === "admin") {
+          var rescues = ["sanjuan1", "sanjuan", "admin", "1234"];
+          if (rescues.indexOf(pin.toLowerCase()) !== -1) isMatch = true;
+        }
       }
+      return isMatch;
+    }
+
+    if (!pin) { finishLogin(false); return; }
+
+    if (sb) {
+      if (submitBtn) submitBtn.disabled = true;
+      sb.rpc("verify_role_pin", { p_role: role, p_pin: pin }).then(function (res) {
+        if (res.error) {
+          console.warn("[Supabase] verify_role_pin error", res.error);
+          finishLogin(localFallback());
+          return;
+        }
+        finishLogin(!!res.data);
+      }).catch(function () {
+        finishLogin(localFallback());
+      });
       return;
     }
-    login(role);
-    toast("Bienvenido: " + ROLES[role].label, "ok");
-    location.hash = "#/panel";
+
+    finishLogin(localFallback());
   }
 
   function openChangeMyPinModal() {
@@ -1795,7 +2125,23 @@
         state.settings.rolePins[s.role] = val;
         if (s.role === "admin") state.settings.pin = val;
         saveState();
-        toast("Contraseña de " + roleLabel + " guardada correctamente.", "ok");
+        if (sb) {
+          sb.rpc("update_role_pin", {
+            p_target_role: s.role,
+            p_new_pin: val,
+            p_auth_role: s.role,
+            p_auth_pin: s.pin || ""
+          }).then(function (res) {
+            if (res.error || !res.data) {
+              toast("No se pudo actualizar la contraseña en Supabase. Volvé a iniciar sesión.", "error");
+              return;
+            }
+            login(s.role, val);
+            toast("Contraseña de " + roleLabel + " guardada en la nube.", "ok");
+          });
+        } else {
+          toast("Contraseña de " + roleLabel + " guardada correctamente.", "ok");
+        }
         return true;
       }
     });
@@ -2110,10 +2456,17 @@
     }
     if (closePhotoData) {
       var photoId = "ph-" + uid();
-      idbPut(photoId, closePhotoData).then(function () {
+      var photoDataToUpload = closePhotoData;
+      idbPut(photoId, photoDataToUpload).then(function () {
         report.photos.push({ id: photoId, kind: "cierre", caption: "Evidencia de cierre" });
         addEvent(report, "evidencia", author, "Se adjuntó la foto de cierre.", null);
+        var evPhoto = report.events[report.events.length - 1];
         updateReport(code, patch, event);
+        sbResolveReportId(code).then(function (rId) {
+          if (!rId) return;
+          sbUploadPhoto(rId, report.code, photoId, "cierre", photoDataToUpload);
+          sbInsertEvents(rId, [evPhoto]);
+        });
         renderGestion(code);
         toast("Estado y foto de cierre guardados.", "ok");
       });
@@ -2163,6 +2516,7 @@
       confirmText: "Eliminar aviso",
       danger: true,
       onConfirm: function () {
+        sbDeleteReport(report);
         report.photos.forEach(function (p) { if (p.id) idbDel(p.id); });
         state.reports = state.reports.filter(function (r) { return r.code !== report.code; });
         saveState();
@@ -2255,6 +2609,7 @@
     var newId = "cat-" + uid();
     state.settings.customAreas.push({ id: newId, label: label });
     saveState();
+    if (sb) sb.from("custom_areas").upsert({ id: newId, label: label }, { onConflict: "id" });
     if (input) input.value = "";
     populateSupAreaSelect();
     if ($("#sup-area")) $("#sup-area").value = newId;
@@ -2288,14 +2643,16 @@
     if (name.length < 3) { toast("Ingresá el nombre o cargo del supervisor.", "error"); return; }
     if (phone.length < 8) { toast("Ingresá un número de WhatsApp válido (ej.: 5492645550101).", "error"); return; }
     if (!Array.isArray(state.settings.supervisors)) state.settings.supervisors = [];
-    state.settings.supervisors.push({
+    var newSup = {
       id: "sup-" + uid(),
       name: name,
       area: area,
       shift: shift,
       phone: phone
-    });
+    };
+    state.settings.supervisors.push(newSup);
     saveState();
+    if (sb) sb.from("supervisors").upsert(newSup, { onConflict: "id" });
     if ($("#sup-name")) $("#sup-name").value = "";
     if ($("#sup-phone")) $("#sup-phone").value = "";
     renderSupervisorsList();
@@ -2311,14 +2668,26 @@
     renderCustomAreasList();
     renderSupervisorsList();
     if ($("#cfg-planta")) $("#cfg-planta").value = set.planta || "";
-    if ($("#cfg-pin-admin")) $("#cfg-pin-admin").value = rp.admin || set.pin || "sanjuan";
-    if ($("#cfg-pin-produccion")) $("#cfg-pin-produccion").value = rp.produccion || "sanjuan";
-    if ($("#cfg-pin-mantenimiento")) $("#cfg-pin-mantenimiento").value = rp.mantenimiento || "sanjuan";
-    if ($("#cfg-pin-seguridad")) $("#cfg-pin-seguridad").value = rp.seguridad || "sanjuan";
+    if (sb) {
+      ["#cfg-pin-admin", "#cfg-pin-produccion", "#cfg-pin-mantenimiento", "#cfg-pin-seguridad"].forEach(function (sel) {
+        var el = $(sel);
+        if (el) {
+          el.value = "";
+          el.placeholder = "Dejar vacío para mantener la actual";
+        }
+      });
+    } else {
+      if ($("#cfg-pin-admin")) $("#cfg-pin-admin").value = rp.admin || set.pin || "sanjuan";
+      if ($("#cfg-pin-produccion")) $("#cfg-pin-produccion").value = rp.produccion || "sanjuan";
+      if ($("#cfg-pin-mantenimiento")) $("#cfg-pin-mantenimiento").value = rp.mantenimiento || "sanjuan";
+      if ($("#cfg-pin-seguridad")) $("#cfg-pin-seguridad").value = rp.seguridad || "sanjuan";
+    }
     var note = $("#config-role-note");
     if (note) {
       note.hidden = false;
-      note.innerHTML = "Sesión exclusiva de <b>Administrador</b>: desde acá cargás los números de supervisores y podés ver o recuperar las contraseñas de todos los sectores.";
+      note.innerHTML = sb
+        ? "Sesión exclusiva de <b>Administrador</b>: desde acá cargás supervisores y podés restablecer las contraseñas de cualquier sector en Supabase."
+        : "Sesión exclusiva de <b>Administrador</b>: desde acá cargás los números de supervisores y podés ver o recuperar las contraseñas de todos los sectores.";
     }
     var photoCount = state.reports.reduce(function (acc, r) { return acc + r.photos.length; }, 0);
     var bytes = 0;
@@ -2342,13 +2711,14 @@
     var pMant = (($("#cfg-pin-mantenimiento") || {}).value || "").trim();
     var pSeg = (($("#cfg-pin-seguridad") || {}).value || "").trim();
     var checkEntries = [
-      { label: "Administrador", val: pAdmin, cur: (state.settings.rolePins || {}).admin, el: "#cfg-pin-admin" },
-      { label: "Producción (5S)", val: pProd, cur: (state.settings.rolePins || {}).produccion, el: "#cfg-pin-produccion" },
-      { label: "Mantenimiento", val: pMant, cur: (state.settings.rolePins || {}).mantenimiento, el: "#cfg-pin-mantenimiento" },
-      { label: "Seguridad", val: pSeg, cur: (state.settings.rolePins || {}).seguridad, el: "#cfg-pin-seguridad" }
+      { role: "admin", label: "Administrador", val: pAdmin, cur: (state.settings.rolePins || {}).admin, el: "#cfg-pin-admin" },
+      { role: "produccion", label: "Producción (5S)", val: pProd, cur: (state.settings.rolePins || {}).produccion, el: "#cfg-pin-produccion" },
+      { role: "mantenimiento", label: "Mantenimiento", val: pMant, cur: (state.settings.rolePins || {}).mantenimiento, el: "#cfg-pin-mantenimiento" },
+      { role: "seguridad", label: "Seguridad", val: pSeg, cur: (state.settings.rolePins || {}).seguridad, el: "#cfg-pin-seguridad" }
     ];
     for (var i = 0; i < checkEntries.length; i++) {
       var item = checkEntries[i];
+      if (sb && !item.val) continue;
       // Validar toda contraseña nueva o modificada (o cualquiera que no sea el valor inicial heredado sin tocar)
       if (item.val !== item.cur || validateRolePassword(item.val) === "") {
         var pwdErr = validateRolePassword(item.val);
@@ -2359,6 +2729,48 @@
         }
       }
     }
+
+    if (sb) {
+      var s = session() || {};
+      var toUpdate = checkEntries.filter(function (item) { return !!item.val; });
+      saveState();
+      if (!toUpdate.length) {
+        if ($("#config-saved")) {
+          $("#config-saved").textContent = "Guardado el " + fmtDT(new Date());
+          setTimeout(function () { if ($("#config-saved")) $("#config-saved").textContent = ""; }, 4000);
+        }
+        toast("Configuración guardada.", "ok");
+        renderConfig();
+        return;
+      }
+      Promise.all(toUpdate.map(function (item) {
+        return sb.rpc("update_role_pin", {
+          p_target_role: item.role,
+          p_new_pin: item.val,
+          p_auth_role: "admin",
+          p_auth_pin: s.pin || ""
+        }).then(function (res) {
+          if (!res.error && res.data && item.role === "admin") {
+            login("admin", item.val);
+          }
+          return !res.error && !!res.data;
+        });
+      })).then(function (results) {
+        var allOk = results.every(Boolean);
+        if (!allOk) {
+          toast("No se pudieron actualizar todas las contraseñas en Supabase. Verificá tu sesión de Administrador.", "error");
+          return;
+        }
+        if ($("#config-saved")) {
+          $("#config-saved").textContent = "Guardado en la nube el " + fmtDT(new Date());
+          setTimeout(function () { if ($("#config-saved")) $("#config-saved").textContent = ""; }, 4000);
+        }
+        toast("Contraseñas actualizadas en Supabase.", "ok");
+        renderConfig();
+      });
+      return;
+    }
+
     state.settings.rolePins = {
       admin: pAdmin,
       produccion: pProd,
@@ -2590,6 +3002,7 @@
       if (used) { toast("Primero quitá los supervisores asignados a este rol.", "warn"); return; }
       state.settings.customAreas = (state.settings.customAreas || []).filter(function (c) { return c.id !== areaId; });
       saveState();
+      if (sb) sb.from("custom_areas").delete().eq("id", areaId);
       populateSupAreaSelect();
       renderCustomAreasList();
       toast("Categoría eliminada.", "ok");
@@ -2601,6 +3014,7 @@
       var supId = removeSup.getAttribute("data-remove-sup");
       state.settings.supervisors = (state.settings.supervisors || []).filter(function (s) { return s.id !== supId; });
       saveState();
+      if (sb) sb.from("supervisors").delete().eq("id", supId);
       renderSupervisorsList();
       renderConfig();
       toast("Supervisor eliminado.", "ok");
@@ -2926,6 +3340,7 @@
     renderSessionBox();
     if (!location.hash) location.hash = "#/";
     route();
+    syncFromSupabase();
     window.addEventListener("hashchange", route);
     document.addEventListener("click", handleClick);
     document.addEventListener("keydown", function (event) {
