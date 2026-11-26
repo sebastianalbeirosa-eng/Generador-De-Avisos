@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AVISO EN LÍNEA · Cerámica San Lorenzo · Planta San Juan</title>
+  <meta name="description" content="AVISO EN LÍNEA: Registro digital de avisos de mantenimiento, 5S y seguridad para Cerámica San Lorenzo - Planta San Juan. Trazabilidad operativa desde el hallazgo hasta la solución." />
+  <meta name="author" content="DMBE Systems by Guillermo S. Albeiro" />
+  <meta name="theme-color" content="#0d2137" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d2137'/%3E%3Cpath d='M4 16c3-6 7.5-8.5 12-8.5s9 2.5 12 8.5c-3 6-7.5 8.5-12 8.5S7 22 4 16Z' fill='none' stroke='%23ffbe45' stroke-width='2.2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='none' stroke='%23ffbe45' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffbe45'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-group">
+        <a class="brand" href="#/">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 12c2.5-5 5.5-7.5 9.5-7.5s7 2.5 9.5 7.5c-2.5 5-5.5 7.5-9.5 7.5s-7-2.5-9.5-7.5Z" />
+              <circle cx="12" cy="12" r="3.8" stroke-width="2.2" />
+              <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+              <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2" stroke-width="1.8" opacity="0.8" />
+            </svg>
+          </span>
+          <span class="brand-text">
+            <strong>AVISO <span>EN LÍNEA</span></strong>
+            <small>Planta San Juan</small>
+          </span>
+        </a>
+        <img src="imagenes/logo-san-lorenzo-light.png" alt="Cerámica San Lorenzo" class="tb-logo tb-logo-sl" />
+      </div>
+
+      <nav class="mainnav" id="mainnav" aria-label="Navegación principal">
+        <a href="#/">Inicio</a>
+        <a href="#/trazabilidad">Trazabilidad</a>
+        <a href="#/panel">Panel</a>
+        <a href="#/ayuda">Ayuda</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <a class="btn btn-primary btn-sm" href="#/reportar">Cargar aviso</a>
+        <div id="session-box" class="session-box"></div>
+        <img src="imagenes/logo-lamosa-light.png" alt="Grupo Lamosa" class="tb-logo tb-logo-lamosa" />
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="main">
+
+    <!-- ===================== LANDING ===================== -->
+    <section class="view" data-view="landing" hidden>
+      <div class="hero">
+        <div class="hero-bg" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <div class="hero-brands" aria-label="Identidad corporativa">
+            <img src="imagenes/logo-san-lorenzo-light.png" alt="Cerámica San Lorenzo" class="hb-logo hb-logo-sl" />
+            <img src="imagenes/logo-lamosa-light.png" alt="Grupo Lamosa" class="hb-logo hb-logo-lamosa" />
+          </div>
+          <div class="hero-copy">
+            <h1>Trazabilidad operativa<br /><span class="hero-mark">desde el hallazgo hasta la solución.</span></h1>
+            <p class="hero-text">
+              Registrá eventos de <strong>Mantenimiento</strong>, <strong>Métodos 5S</strong> o <strong>Seguridad Industrial</strong> con evidencia fotográfica, derivación automática y cierre documentado.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary btn-lg" href="#/reportar">Cargar un aviso ahora</a>
+              <a class="btn btn-ghost btn-lg" href="#/panel">Panel de supervisión</a>
+            </div>
+            <ul class="hero-list">
+              <li>Para toda la planta</li>
+              <li>Foto como prueba visual</li>
+              <li>Plazo según prioridad</li>
+              <li>Funciona desde el celular</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="page">
+        <div class="kpi-strip" id="landing-kpis"></div>
+
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Tres caminos, un mismo registro</p>
+            <h2>El operario elige el área. El sistema se encarga del resto.</h2>
+            <p class="muted">Cada tipo de aviso viaja al WhatsApp del área involucrada y queda archivado para seguimiento.</p>
+          </div>
+          <a class="btn btn-light" href="#/ayuda">Cómo se usa</a>
+        </div>
+
+        <div class="grid-3 type-grid">
+          <button class="type-tile" type="button" data-quick-type="mantenimiento">
+            <span class="tile-icon icon-mant">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 1 0 5 5L21 10l-7 7-3-3 7-7 1.7-1.7Z"/><path d="m11 13-7 7"/></svg>
+            </span>
+            <strong>Mantenimiento</strong>
+            <span class="muted-sm">Pérdidas de aceite, fugas, ruidos, fallas y paradas de equipo.</span>
+            <span class="tile-tags"><i>Pérdida de aceite</i><i>Ruido anormal</i><i>Parada</i></span>
+          </button>
+          <button class="type-tile" type="button" data-quick-type="5s">
+            <span class="tile-icon icon-5s">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6"/><path d="M16.5 6.5 9 14l-4 1 1-4 7.5-7.5"/><path d="m7 13 4 4"/><path d="M4 20c1.5-1 3-1 4.5 0"/></svg>
+            </span>
+            <strong>5S / Orden</strong>
+            <span class="muted-sm">Polvo, desorden, pérdidas de material, limpieza y estándares.</span>
+            <span class="tile-tags"><i>Pérdida de polvo</i><i>Desorden</i><i>Derrame</i></span>
+          </button>
+          <button class="type-tile" type="button" data-quick-type="seguridad">
+            <span class="tile-icon icon-seg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3Z"/><path d="M12 8v4"/><path d="M12 15.5h.01"/></svg>
+            </span>
+            <strong>Seguridad</strong>
+            <span class="muted-sm">Peldaños dañados, resguardos, señalización y riesgos de accidente.</span>
+            <span class="tile-tags"><i>Peldaño dañado</i><i>Resguardo</i><i>Señalización</i></span>
+          </button>
+        </div>
+
+        <div class="grid-2 mt-8">
+          <div class="card card-pad">
+            <p class="eyebrow">Cómo funciona</p>
+            <h2 class="h3">Del aviso al cierre en tres pasos</h2>
+            <ol class="steps">
+              <li><span>01</span><div><strong>Ingresá al enlace de la app</strong><p>Abrí la app desde el enlace compartido en tu celular. No necesitás instalar nada.</p></div></li>
+              <li><span>02</span><div><strong>Cargá el aviso en 60 segundos</strong><p>Quién reporta, sector/equipo, tipo de evento, foto y una observación clara.</p></div></li>
+              <li><span>03</span><div><strong>Supervisión gestiona y da el cierre</strong><p>Se evalúa la prioridad, se asigna responsable y se documenta la resolución con foto.</p></div></li>
+            </ol>
+          </div>
+
+          <div class="card card-dark card-pad">
+            <p class="eyebrow eyebrow-light">Avisar por WhatsApp no alcanza</p>
+            <h2 class="h3 light">Trazabilidad y registro digital para toda la planta</h2>
+            <p class="muted-light">Planta San Juan digitaliza la captura de desvíos: cada aviso genera número de seguimiento, prioridad y plazo de atención, permitiendo consolidar la información en planillas compartidas.</p>
+            <ul class="dark-list">
+              <li><strong>Registro</strong> con número único, sector, prioridad y plazo.</li>
+              <li><strong>Seguimiento</strong> con bitácora de novedades y responsable.</li>
+              <li><strong>Cierre</strong> con acción correctiva y foto de evidencia.</li>
+              <li><strong>Planilla</strong> compatible con Excel / Google Sheets para análisis de fallas.</li>
+            </ul>
+            <a class="btn btn-light mt-4" href="#/ayuda">Ver guía de uso</a>
+          </div>
+        </div>
+
+        <div class="section-head mt-8">
+          <div>
+            <p class="eyebrow">Últimos movimientos</p>
+            <h2>Avisos recientes de la planta</h2>
+          </div>
+          <a class="link-arrow" href="#/trazabilidad">Ver todos →</a>
+        </div>
+        <div class="grid-3" id="landing-recent"></div>
+      </div>
+    </section>
+
+    <!-- ===================== REPORTAR (OPERARIO) ===================== -->
+    <section class="view" data-view="reportar" hidden>
+      <div class="page page-narrow">
+        <div class="operator-head">
+          <div class="operator-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 17h6M17 14v6" stroke-width="2.2"/></svg>
+          </div>
+          <div>
+            <strong>Planta San Juan · Cargar aviso operativo</strong>
+            <p>Mantenimiento, 5S o Seguridad. Con foto y número de seguimiento: el aviso no se pierde en un chat.</p>
+          </div>
+        </div>
+
+
+        <div class="card wizard" id="wizard">
+          <div class="wizard-head">
+            <div class="wizard-meta"><span id="step-label">Paso 1 de 4 · Quién reporta</span><span id="step-percent">25 %</span></div>
+            <div class="progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          </div>
+
+          <form id="report-form" novalidate>
+            <!-- STEP 1 -->
+            <fieldset class="step" data-step="1">
+              <legend class="sr-only">Quién reporta</legend>
+              <div class="hint-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
+                <p>Necesitamos saber quién reporta para poder consultarte si hace falta. Tus datos quedan guardados para la próxima vez.</p>
+              </div>
+              <div class="field">
+                <label for="f-name">Nombre y apellido <b>*</b></label>
+                <input id="f-name" name="employeeName" type="text" autocomplete="name" maxlength="90" placeholder="Ej.: Marcos Ferreyra" />
+                <small class="error" data-error-for="employeeName"></small>
+              </div>
+              <div class="grid-2 gap-sm">
+                <div class="field">
+                  <label for="f-legajo">Legajo <b>*</b></label>
+                  <input id="f-legajo" name="employeeId" type="text" inputmode="numeric" maxlength="20" placeholder="Ej.: 2041" />
+                  <small class="error" data-error-for="employeeId"></small>
+                </div>
+                <div class="field">
+                  <label for="f-sector">Sector al que pertenecés <b>*</b></label>
+                  <select id="f-sector" name="operatorSector"></select>
+                  <small class="error" data-error-for="operatorSector"></small>
+                </div>
+              </div>
+              <div class="field">
+                <span class="label">Turno <b>*</b></span>
+                <div class="chips" id="shift-chips" role="group" aria-label="Turno"></div>
+                <small class="error" data-error-for="shift"></small>
+              </div>
+            </fieldset>
+
+            <!-- STEP 2 -->
+            <fieldset class="step" data-step="2" hidden>
+              <legend class="sr-only">Tipo de aviso</legend>
+              <div class="field">
+                <span class="label">¿Qué tipo de evento querés registrar? <b>*</b></span>
+                <div class="type-cards" id="type-cards" role="group" aria-label="Tipo de aviso"></div>
+                <small class="error" data-error-for="type"></small>
+              </div>
+              <div class="field">
+                <span class="label">Prioridad <b>*</b></span>
+                <div class="chips severity-chips" id="severity-chips" role="group" aria-label="Prioridad"></div>
+                <small class="error" data-error-for="severity"></small>
+              </div>
+              <div class="field">
+                <label for="f-equipment">Sector donde ocurre el evento <b>*</b></label>
+                <select id="f-equipment" name="equipment"></select>
+                <small class="error" data-error-for="equipment"></small>
+              </div>
+              <div class="field">
+                <label for="f-location">Equipo o ubicación específica <span class="opt">(opcional)</span></label>
+                <input id="f-location" name="location" type="text" list="equipment-suggestions" maxlength="140" placeholder="Ej.: Prensa 3, Molino 2, Cinta transportadora..." />
+                <datalist id="equipment-suggestions"></datalist>
+              </div>
+            </fieldset>
+
+            <!-- STEP 3 -->
+            <fieldset class="step" data-step="3" hidden>
+              <legend class="sr-only">Evidencia y detalle</legend>
+              <div class="field">
+                <span class="label">Foto de la evidencia <span class="opt">(opcional, hasta 2)</span></span>
+                <input id="photo-input" type="file" accept="image/*" capture="environment" class="sr-only" />
+                <div class="photo-grid" id="photo-grid">
+                  <button class="photo-add" id="photo-add" type="button">
+                    <span class="photo-add-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h2.5l1.3-2h8.4l1.3 2H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.4"/></svg>
+                    </span>
+                    <strong>Sacar foto o elegir imagen</strong>
+                    <small>La foto se comprime antes de guardarse</small>
+                  </button>
+                </div>
+                <small class="error" data-error-for="photos"></small>
+                <div class="note note-amber">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4.5 17.5 4.5-4 3.5 3 3-2.5 4 3.5"/></svg>
+                  <span>La foto es la prueba visual del evento: mostrá la pérdida, el daño o el riesgo completo.</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="f-description">¿Qué pasó? Observación del evento <b>*</b></label>
+                <textarea id="f-description" name="description" rows="5" maxlength="2000" placeholder="Ej.: Pérdida de aceite debajo del equipo / fuga de polvo / peldaño dañado en pasarela..."></textarea>
+                <div class="field-foot"><small>Contá qué encontraste, desde cuándo y si hay riesgo.</small><small id="char-count">0/2000</small></div>
+                <small class="error" data-error-for="description"></small>
+              </div>
+
+              <div class="field">
+                <label for="f-phone">Dejanos tu WhatsApp para contactarte <span class="opt">(Opcional)</span></label>
+                <input id="f-phone" name="phone" type="tel" inputmode="tel" maxlength="30" placeholder="Ej.: 264 555 0101" />
+                <small class="help">Solo para consultas sobre este aviso.</small>
+              </div>
+            </fieldset>
+
+            <!-- STEP 4 -->
+            <fieldset class="step" data-step="4" hidden>
+              <legend class="sr-only">Confirmar</legend>
+              <div class="summary" id="summary"></div>
+
+              <div class="wa-dispatch-box" id="wa-recipients-box">
+                <div class="wa-dispatch-head">
+                  <div>
+                    <strong>¿A quiénes enviar el alerta por WhatsApp?</strong>
+                    <small>Elegí uno o varios supervisores. Al registrar el aviso se prepara el mensaje con todos los datos para cada seleccionado.</small>
+                  </div>
+                </div>
+                <div class="wa-rec-list" id="wa-rec-list"></div>
+              </div>
+
+              <div class="note note-soft">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.5 2.5 4.5-5"/></svg>
+                <span>Al presionar <strong>Registrar aviso</strong>, el evento queda guardado en AVISO EN LÍNEA con número único y se habilita el envío directo por WhatsApp a cada supervisor elegido.</span>
+              </div>
+              <div class="form-error" id="form-error" hidden></div>
+            </fieldset>
+          </form>
+
+          <div class="wizard-actions">
+            <button class="btn btn-light" id="btn-back" type="button" hidden>Atrás</button>
+            <button class="btn btn-primary grow" id="btn-next" type="button">Continuar</button>
+            <button class="btn btn-primary grow" id="btn-submit" type="button" hidden>Registrar aviso</button>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div class="card success-card" id="success" hidden>
+          <div class="success-head">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.5 2.5 4.5-5"/></svg>
+            <div>
+              <h2>Aviso registrado</h2>
+              <p id="success-subtitle">Quedó guardado en AVISO EN LÍNEA con su evidencia y trazabilidad.</p>
+            </div>
+          </div>
+          <div class="success-body">
+            <div class="success-code">
+              <div>
+                <small>Número de aviso</small>
+                <strong id="success-code">—</strong>
+              </div>
+              <div class="success-badges" id="success-badges"></div>
+            </div>
+            <dl class="data-list" id="success-data"></dl>
+            <div id="success-wa-extra" hidden></div>
+            <div class="success-actions">
+              <a class="btn btn-primary" id="success-tracking" href="#/">Ver trazabilidad</a>
+              <button class="btn btn-light" id="btn-new-report" type="button">Cargar otro aviso</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== TRAZABILIDAD (CONSULTA PUBLICA) ===================== -->
+    <section class="view" data-view="trazabilidad" hidden>
+      <div class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Seguimiento y consulta · Planta San Juan</p>
+            <h1 class="h2">Trazabilidad de avisos</h1>
+            <p class="muted">Consultá el estado, prioridad, responsable asignado y bitácora de cada aviso cargado en planta.</p>
+          </div>
+        </div>
+
+        <div class="card card-pad mt-3">
+          <form class="traza-filters" id="traza-filters">
+            <div class="field field-search">
+              <label class="sr-only" for="traza-search">Buscar aviso</label>
+              <input id="traza-search" type="search" placeholder="Buscar por N° (ej. PR-2026-0004), sector, equipo, legajo o descripción…" />
+            </div>
+            <div class="field">
+              <label class="sr-only" for="traza-filter-status">Estado</label>
+              <select id="traza-filter-status"><option value="">Todos los estados</option></select>
+            </div>
+            <div class="field">
+              <label class="sr-only" for="traza-filter-type">Tipo</label>
+              <select id="traza-filter-type"><option value="">Todos los tipos</option></select>
+            </div>
+            <button class="btn btn-dark" id="btn-traza-go" type="submit">Buscar</button>
+            <button class="btn btn-light" id="btn-traza-clear" type="button">Limpiar</button>
+          </form>
+          <small class="error" id="lookup-error"></small>
+        </div>
+
+        <div class="list-head">
+          <h2 class="h4" id="traza-count">0 avisos</h2>
+          <div class="list-quick" id="traza-quick"></div>
+        </div>
+        <div class="report-list" id="traza-list"></div>
+      </div>
+    </section>
+
+    <!-- ===================== AVISO (SEGUIMIENTO PUBLICO) ===================== -->
+    <section class="view" data-view="aviso" hidden>
+      <div class="page"><div id="aviso-root"></div></div>
+    </section>
+
+    <!-- ===================== LOGIN ===================== -->
+    <section class="view" data-view="login" hidden>
+      <div class="page page-narrow">
+        <div class="card card-pad">
+          <div class="login-brands" aria-label="Identidad institucional">
+            <img src="imagenes/logo-san-lorenzo.png" alt="Cerámica San Lorenzo" class="lb-logo lb-logo-sl" />
+            <img src="imagenes/logo-lamosa.png" alt="Grupo Lamosa" class="lb-logo lb-logo-lamosa" />
+          </div>
+          <p class="eyebrow">Acceso del sector</p>
+          <h1 class="h2">Entrar al panel de gestión</h1>
+          <p class="muted-sm">Elegí tu rol e ingresá tu contraseña. Cada área gestiona sus avisos y el Administrador administra usuarios y canales.</p>
+          <form id="login-form" class="mt-4">
+            <span class="label">Rol / Área</span>
+            <div class="role-cards" id="role-cards" role="group" aria-label="Área"></div>
+            <div class="field mt-3">
+              <label for="login-pin">Contraseña de acceso</label>
+              <input id="login-pin" type="password" autocomplete="current-password" maxlength="32" placeholder="Ingresá tu contraseña" />
+              <small class="help" id="login-hint">Si olvidaste tu contraseña, solicitá su recuperación al Administrador.</small>
+              <small class="error" id="login-error"></small>
+            </div>
+            <button class="btn btn-primary btn-block mt-3" type="submit">Ingresar al panel</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PANEL ===================== -->
+    <section class="view" data-view="panel" hidden>
+      <div class="page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Supervisión y Jefaturas · Planta San Juan</p>
+            <h1 class="h2">Panel de seguimiento de avisos</h1>
+            <p class="muted">Avisos registrados en planta, con semáforo de prioridad, responsable y bitácora de resolución.</p>
+          </div>
+        </div>
+        <div class="banner banner-role" id="panel-role-note" hidden></div>
+        <div class="kpi-grid" id="panel-kpis"></div>
+        <div class="grid-3 mt-3" id="panel-analysis"></div>
+
+        <div class="card card-pad mt-3">
+          <form class="filters" id="panel-filters">
+            <div class="field field-search">
+              <label class="sr-only" for="f-search">Buscar</label>
+              <input id="f-search" type="search" placeholder="Buscar por N°, equipo, descripción o legajo…" />
+            </div>
+            <div class="field">
+              <label class="sr-only" for="f-filter-type">Tipo</label>
+              <select id="f-filter-type"><option value="">Todos los tipos</option></select>
+            </div>
+            <div class="field">
+              <label class="sr-only" for="f-filter-status">Estado</label>
+              <select id="f-filter-status"><option value="">Todos los estados</option></select>
+            </div>
+            <div class="field">
+              <label class="sr-only" for="f-filter-severity">Prioridad</label>
+              <select id="f-filter-severity"><option value="">Toda prioridad</option></select>
+            </div>
+            <div class="field">
+              <label class="sr-only" for="f-filter-equipment">Sector</label>
+              <select id="f-filter-equipment"><option value="">Todos los sectores</option></select>
+            </div>
+            <label class="check"><input id="f-filter-overdue" type="checkbox" /> Solo fuera de plazo</label>
+            <button class="btn btn-light" id="btn-clear-filters" type="button">Limpiar</button>
+            <div class="filters-tools">
+              <button class="btn btn-dark btn-sm" id="btn-export-csv" type="button">Exportar CSV (Excel)</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="list-head">
+          <h2 class="h4" id="panel-count">0 avisos</h2>
+          <div class="list-quick" id="panel-quick"></div>
+        </div>
+        <div class="report-list" id="panel-list"></div>
+      </div>
+    </section>
+
+    <!-- ===================== GESTION ===================== -->
+    <section class="view" data-view="gestion" hidden>
+      <div class="page"><div id="gestion-root"></div></div>
+    </section>
+
+    <!-- ===================== CONFIGURACION (SOLO ADMIN) ===================== -->
+    <section class="view" data-view="config" hidden>
+      <div class="page page-narrow">
+        <a class="link-arrow" href="#/panel">← Volver al Panel de Administrador</a>
+        <p class="eyebrow mt-3">Exclusivo Administrador</p>
+        <h1 class="h2">Configuración general y recuperación de usuarios</h1>
+        <p class="muted">Solo el Administrador puede cargar los números de supervisores para alertas de WhatsApp y visualizar o recuperar las contraseñas de cada sector.</p>
+        <div class="banner banner-role mt-3" id="config-role-note" hidden></div>
+
+        <div class="card card-pad mt-3">
+          <h2 class="h3">Supervisores y contactos de WhatsApp</h2>
+          <p class="muted-sm">Asigná cada número a una de las 3 áreas base (<strong>Mantenimiento</strong>, <strong>Producción para 5S</strong> o <strong>Seguridad e Higiene</strong>), o creá nuevas categorías personalizadas abajo si necesitás sumar otros sectores.</p>
+
+          <form id="sup-add-form" class="sup-form mt-3">
+            <div class="grid-2 gap-sm">
+              <div class="field">
+                <label for="sup-name">Nombre y apellido / Cargo <b>*</b></label>
+                <input id="sup-name" type="text" maxlength="70" placeholder="Ej.: Juan Pérez · Sup. Mantenimiento" />
+              </div>
+              <div class="field">
+                <label for="sup-phone">Número de WhatsApp <b>*</b></label>
+                <input id="sup-phone" type="tel" inputmode="tel" maxlength="24" placeholder="Ej.: 5492645550101" />
+              </div>
+              <div class="field">
+                <label for="sup-area">Responsabilidad / Categoría <b>*</b></label>
+                <select id="sup-area"></select>
+              </div>
+              <div class="field">
+                <label for="sup-shift">Turno asignado</label>
+                <select id="sup-shift">
+                  <option value="Todos los turnos">Todos los turnos</option>
+                  <option value="Turno Mañana">Turno Mañana</option>
+                  <option value="Turno Tarde">Turno Tarde</option>
+                  <option value="Turno Noche">Turno Noche</option>
+                  <option value="Turno Central">Turno Central</option>
+                </select>
+              </div>
+            </div>
+            <div class="row-actions mt-3">
+              <button class="btn btn-primary" type="submit">+ Agregar supervisor</button>
+            </div>
+          </form>
+
+          <div class="custom-cat-box mt-3">
+            <label for="custom-area-name" class="label">¿Necesitás agregar otro rol o sector? <span class="opt">(queda guardado en el selector)</span></label>
+            <form id="custom-area-form" class="custom-cat-row">
+              <input id="custom-area-name" type="text" maxlength="50" placeholder="Ej.: Supervisor de Moliendas, Hornos, Matricería…" />
+              <button class="btn btn-light" type="submit">+ Guardar rol</button>
+            </form>
+            <div class="chips mt-2" id="custom-areas-list"></div>
+          </div>
+
+          <div class="sup-list mt-4" id="supervisors-list"></div>
+        </div>
+
+        <form class="card card-pad mt-3" id="config-form">
+          <h2 class="h3">Contraseñas de roles y recuperación de accesos</h2>
+          <p class="muted-sm">Acá podés ver las contraseñas actuales que guardaron Producción, Mantenimiento y Seguridad para recuperarlas si las olvidan, o asignarles una nueva. <strong>Requisito para todos los roles:</strong> más de 6 caracteres, al menos 1 mayúscula y 1 número.</p>
+          <div class="grid-2 gap-sm mt-3">
+            <div class="field">
+              <label for="cfg-pin-admin">Contraseña · Administrador</label>
+              <input id="cfg-pin-admin" type="text" maxlength="32" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="cfg-pin-produccion">Contraseña · Producción (5S)</label>
+              <input id="cfg-pin-produccion" type="text" maxlength="32" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="cfg-pin-mantenimiento">Contraseña · Mantenimiento</label>
+              <input id="cfg-pin-mantenimiento" type="text" maxlength="32" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="cfg-pin-seguridad">Contraseña · Seguridad</label>
+              <input id="cfg-pin-seguridad" type="text" maxlength="32" autocomplete="off" />
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label for="cfg-planta">Nombre de la empresa y planta</label>
+              <input id="cfg-planta" type="text" maxlength="80" />
+            </div>
+          </div>
+          <div class="row-actions mt-3">
+            <button class="btn btn-primary" id="btn-save-config" type="submit">Guardar contraseñas y datos</button>
+            <span class="muted-xs" id="config-saved"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===================== IMPORTAR ===================== -->
+    <section class="view" data-view="importar" hidden>
+      <div class="page page-narrow"><div id="import-root"></div></div>
+    </section>
+
+    <!-- ===================== AYUDA ===================== -->
+    <section class="view" data-view="ayuda" hidden>
+      <div class="page page-narrow">
+        <p class="eyebrow">Guía rápida</p>
+        <h1 class="h2">Cómo trabajar con Aviso en Línea</h1>
+        <p class="muted">Tres roles, un mismo registro. Para toda la planta.</p>
+
+        <div class="card card-pad mt-4">
+          <h2 class="h3">1 · Operario</h2>
+          <p class="muted-sm">Ingresá al enlace de la app, completá tus datos una sola vez, elegí el tipo de aviso, sacá una foto y registrá. Al final recibís un número único y podés avisar por WhatsApp al área correspondiente con el mensaje ya redactado.</p>
+        </div>
+        <div class="card card-pad mt-3">
+          <h2 class="h3">2 · Supervisión y Jefaturas</h2>
+          <p class="muted-sm">Entra al Panel con su PIN. Ve todos los avisos clasificados por área y prioridad, asigna responsable, escribe la acción realizada, adjunta foto de solución y cierra el evento.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo-side footer-logo-left">
+        <img src="imagenes/logo-san-lorenzo-light.png" alt="Cerámica San Lorenzo" class="fb-logo fb-logo-sl" />
+      </div>
+      <div class="footer-col-center">
+        <strong class="footer-brand">AVISO <span>EN LÍNEA</span></strong>
+        <p>Registro digital de avisos operativos · Cerámica San Lorenzo, Planta San Juan.</p>
+      </div>
+      <div class="footer-logo-side footer-logo-right">
+        <img src="imagenes/logo-lamosa-light.png" alt="Grupo Lamosa" class="fb-logo fb-logo-lamosa" />
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Desarrollo y tecnología: <strong>DMBE Systems</strong> by Guillermo S. Albeiro &copy; Todos los derechos reservados</span>
+    </div>
+  </footer>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+<div class="modal-root" id="modal-root" hidden></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>
