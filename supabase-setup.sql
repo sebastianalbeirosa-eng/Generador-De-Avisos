@@ -83,6 +83,11 @@ create table if not exists public.report_photos (
   created_at timestamptz not null default now()
 );
 
+alter table public.report_photos drop constraint if exists report_photos_kind_check;
+alter table public.report_photos
+  add constraint report_photos_kind_check
+  check (kind in ('reporte', 'cierre', 'antes', 'despues'));
+
 create index if not exists idx_report_photos_report_id on public.report_photos (report_id);
 
 -- --------------------------------------------------------------------------
@@ -217,6 +222,12 @@ create policy "photos_select_all" on public.report_photos for select using (true
 drop policy if exists "photos_insert_all" on public.report_photos;
 create policy "photos_insert_all" on public.report_photos for insert with check (true);
 
+drop policy if exists "photos_update_all" on public.report_photos;
+create policy "photos_update_all" on public.report_photos for update using (true) with check (true);
+
+drop policy if exists "photos_delete_all" on public.report_photos;
+create policy "photos_delete_all" on public.report_photos for delete using (true);
+
 -- supervisors y custom_areas
 drop policy if exists "supervisors_all" on public.supervisors;
 create policy "supervisors_all" on public.supervisors for all using (true) with check (true);
@@ -242,6 +253,10 @@ for select using (bucket_id = 'avisos-fotos');
 drop policy if exists "avisos_fotos_insert" on storage.objects;
 create policy "avisos_fotos_insert" on storage.objects
 for insert with check (bucket_id = 'avisos-fotos');
+
+drop policy if exists "avisos_fotos_update" on storage.objects;
+create policy "avisos_fotos_update" on storage.objects
+for update using (bucket_id = 'avisos-fotos') with check (bucket_id = 'avisos-fotos');
 
 drop policy if exists "avisos_fotos_delete" on storage.objects;
 create policy "avisos_fotos_delete" on storage.objects

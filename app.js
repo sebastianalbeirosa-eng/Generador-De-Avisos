@@ -441,22 +441,30 @@
     var blob = dataUrlToBlob(dataUrl);
     return sb.storage.from(SUPABASE_BUCKET).upload(path, blob, {
       contentType: blob.type || "image/jpeg",
-      upsert: true
+      upsert: false
     }).then(function (upRes) {
-      if (upRes.error) { console.warn("[Supabase] upload error", upRes.error); return false; }
-      return sb.from("report_photos").upsert({
+      if (upRes.error) {
+        console.error("[Supabase] upload error", upRes.error);
+        toast("Error al subir foto a Storage: " + (upRes.error.message || "revisar políticas"), "error");
+        return false;
+      }
+      return sb.from("report_photos").insert({
         id: photoId,
         report_id: reportId,
         kind: kind || "reporte",
         storage_path: path
-      }, { onConflict: "id" }).then(function (dbRes) {
-        if (dbRes.error) { console.warn("[Supabase] report_photos error", dbRes.error); return false; }
+      }).then(function (dbRes) {
+        if (dbRes.error) {
+          console.error("[Supabase] report_photos error", dbRes.error);
+          toast("Foto subida pero no registrada en tabla: " + (dbRes.error.message || ""), "error");
+          return false;
+        }
         var url = sbPublicUrl(path);
         if (url) photoCache[photoId] = url;
         return true;
       });
     }).catch(function (err) {
-      console.warn("[Supabase] photo exception", err);
+      console.error("[Supabase] photo exception", err);
       return false;
     });
   }
