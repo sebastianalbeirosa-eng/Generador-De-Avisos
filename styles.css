@@ -334,7 +334,6 @@ code { font-family: var(--mono); }
 .hero-list li::before {
   content: "✓"; position: absolute; left: 0; color: var(--safety-400); font-weight: 800;
 }
-.hero-card { display: none !important; }
 
 /* ---------------- kpi ---------------- */
 .kpi-strip {
