@@ -2346,32 +2346,27 @@
     var s = session();
     var allowed = canManage(report.type);
     var due = dueInfo(report);
-    pickedStatus = report.status;
+    var manageStatuses = ["abierto", "en_proceso", "cerrado"];
+    pickedStatus = report.status === "resuelto" ? "cerrado" : report.status;
     closePhotoData = null;
 
     var managePanel = allowed
-      ? '<div class="manage-card"><h2>Gestionar estado</h2><p>Cada cambio queda firmado en la bitácora.</p>' +
-        '<div class="status-picker" id="status-picker">' + STATUS_ORDER.map(function (k) {
-          return '<button type="button" data-action="pick-status" data-status="' + k + '" class="' + (report.status === k ? "on" : "") + '">' + esc(STATUSES[k].label) + "</button>";
+      ? '<div class="manage-card"><h2>Gestionar aviso</h2><p>Actualizá el estado, asigná responsable y registrá seguimiento o cierre.</p>' +
+        '<div class="status-picker" id="status-picker">' + manageStatuses.map(function (k) {
+          return '<button type="button" data-action="pick-status" data-status="' + k + '" class="' + (pickedStatus === k ? "on" : "") + '">' + esc(STATUSES[k].label) + "</button>";
         }).join("") + "</div>" +
-        '<div class="field mt-2" id="resolution-field" hidden><label for="g-resolution">Acción realizada <b>*</b></label>' +
-        '<textarea id="g-resolution" rows="3" maxlength="2000" placeholder="Ej.: Se reemplazó el retén del cilindro y se limpió el piso.">' + esc(report.resolution || "") + "</textarea></div>" +
-        '<div class="field mt-2"><label for="g-note">Nota de seguimiento (opcional)</label><input id="g-note" type="text" maxlength="2000" placeholder="Ej.: Se inspecciona en el cambio de turno." /></div>' +
-        '<div class="field mt-2" id="close-photo-field" hidden><label for="g-photo">Foto de cierre (opcional)</label>' +
+        '<div class="field mt-2"><label for="g-assignee">Responsable asignado</label>' +
+        '<input id="g-assignee" type="text" maxlength="90" placeholder="Ej.: Mantenimiento - José Ríos" value="' + esc(report.assignedTo || "") + '" /></div>' +
+        '<div class="field mt-2"><label for="g-note">Comentarios / observaciones <span id="g-note-req" style="color:var(--red-500)" hidden>*</span></label>' +
+        '<textarea id="g-note" rows="3" maxlength="2000" placeholder="Ej.: Se revisó el equipo, se pidió repuesto o se completó la reparación..."></textarea></div>' +
+        '<div class="field mt-2" id="close-photo-field"><label for="g-photo">Evidencia de cierre / seguimiento (foto)</label>' +
         '<input id="g-photo" type="file" accept="image/*" /></div>' +
-        '<div class="field mt-2"><label for="g-author">Tu nombre (queda en la bitácora)</label><input id="g-author" type="text" maxlength="90" value="' + esc(ROLES[s.role].label) + '" /></div>' +
-        '<button class="btn btn-dark btn-block" type="button" data-action="save-status" data-code="' + esc(report.code) + '">Guardar estado</button></div>' +
-        '<div class="manage-card"><h2>Responsable</h2><p>Asigná quién toma el aviso.</p>' +
-        '<div class="field mt-2"><input id="g-assignee" type="text" maxlength="90" placeholder="Ej.: Mantenimiento - José Ríos" value="' + esc(report.assignedTo || "") + '" /></div>' +
-        '<div class="field"><input id="g-assign-note" type="text" maxlength="2000" placeholder="Nota de asignación (opcional)" /></div>' +
-        '<button class="btn btn-light btn-block" type="button" data-action="assign" data-code="' + esc(report.code) + '">Asignar responsable</button></div>' +
-        '<div class="manage-card"><h2>Agregar a la bitácora</h2><p>Documentá avances, pedidos de repuesto o inspecciones.</p>' +
-        '<div class="field mt-2"><textarea id="g-comment" rows="3" maxlength="2000" placeholder="Ej.: Se pidió repuesto al pañol. Llega el jueves."></textarea></div>' +
-        '<button class="btn btn-light btn-block" type="button" data-action="comment" data-code="' + esc(report.code) + '">Registrar comentario</button></div>' +
+        '<div class="field mt-2"><label for="g-author">Tu nombre (firma en bitácora)</label><input id="g-author" type="text" maxlength="90" value="' + esc(ROLES[s.role].label) + '" /></div>' +
+        '<button class="btn btn-dark btn-block mt-2" type="button" data-action="save-status" data-code="' + esc(report.code) + '">Guardar gestión</button>' +
         (isAdmin()
-          ? '<div class="manage-card"><h2>Administración</h2><p>Solo el Administrador puede eliminar avisos.</p>' +
-            '<button class="btn btn-danger btn-block mt-2" type="button" data-action="delete-report" data-code="' + esc(report.code) + '">Eliminar aviso</button></div>'
-          : "")
+          ? '<button class="btn btn-danger btn-block mt-2" type="button" data-action="delete-report" data-code="' + esc(report.code) + '">Eliminar aviso</button>'
+          : "") +
+        "</div>"
       : '<div class="manage-card"><h2>Solo lectura</h2><div class="locked-note mt-2">Tu rol (' + esc(s ? ROLES[s.role].label : "sin sesión") + ") no puede cerrar avisos de " +
         esc(TYPES[report.type].label) + '. <a href="#" data-action="logout">Cambiar de usuario</a> o pedile al área responsable que lo gestione.</div></div>';
 
@@ -2387,17 +2382,14 @@
       '<section class="card card-pad"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><h2 class="h4">Evento reportado</h2>' +
       '<span class="badge b-neutral">Prioridad ' + esc(SEVERITIES[report.severity].label) + " · SLA " + SEVERITIES[report.severity].sla + " h</span></div>" +
       '<p class="muted" style="white-space:pre-line;margin-top:8px">' + esc(report.description) + "</p>" +
-      (report.resolution ? '<div class="note note-ok mt-3"><span><strong>Resolución:</strong> ' + esc(report.resolution) + "</span></div>" : "") +
+      (report.resolution ? '<div class="note note-ok mt-3"><span><strong>Resolución / cierre:</strong> ' + esc(report.resolution) + "</span></div>" : "") +
       '<p class="label" style="margin-top:14px">Evidencia (' + report.photos.length + ")</p>" + reportPhotosBlock(report) + "</section>" +
       '<section class="card card-pad"><h2 class="h4">Bitácora / trazabilidad</h2>' + timelineBlock(report) + "</section>" +
       '<section class="card card-pad"><h2 class="h4">Historial del equipo</h2>' + equipmentHistory(report) + "</section>" +
       "</div><aside class=\"detail-stack\">" +
-      '<section class="card card-pad"><h2 class="h4">Aviso al área</h2><div style="margin-top:8px">' + notifyBlock(report) + "</div>" +
-      '<div class="share-box mt-2"><strong style="font-size:11.5px">Pasar este aviso a otro dispositivo</strong>' +
-      '<p class="muted-xs" style="margin-top:3px">Copiá el link y enviálo por WhatsApp. Al abrirlo, el aviso se importa en el panel de ese dispositivo.</p>' +
-      '<button class="btn btn-light btn-sm mt-2" type="button" data-action="copy-import" data-code="' + esc(report.code) + '">Copiar link de importación</button></div></section>' +
+      managePanel +
       '<section class="card card-pad"><h2 class="h4">Datos del aviso</h2>' + dataList(report) + "</section>" +
-      managePanel + "</aside></div>";
+      "</aside></div>";
 
     hydratePhotos(root);
     wireGestion(report);
@@ -2417,11 +2409,9 @@
     var picker = $("#status-picker");
     if (!picker) return;
     function syncStatusFields() {
-      var needsResolution = pickedStatus === "resuelto" || pickedStatus === "cerrado";
-      var resField = $("#resolution-field");
-      var photoField = $("#close-photo-field");
-      if (resField) resField.hidden = !needsResolution;
-      if (photoField) photoField.hidden = !needsResolution;
+      var isClosing = pickedStatus === "cerrado";
+      var reqMark = $("#g-note-req");
+      if (reqMark) reqMark.hidden = !isClosing;
       $$("#status-picker button").forEach(function (btn) {
         btn.classList.toggle("on", btn.getAttribute("data-status") === pickedStatus);
       });
@@ -2437,7 +2427,7 @@
       photoInput.addEventListener("change", function () {
         var file = photoInput.files && photoInput.files[0];
         if (!file) return;
-        compressImage(file).then(function (dataUrl) { closePhotoData = dataUrl; toast("Foto de cierre lista para guardar.", "ok"); })
+        compressImage(file).then(function (dataUrl) { closePhotoData = dataUrl; toast("Foto de evidencia lista para guardar.", "ok"); })
           .catch(function (err) { toast(err.message, "error"); });
       });
     }
@@ -2448,28 +2438,51 @@
     var report = getReport(code);
     if (!report) return;
     if (!canManage(report.type)) { toast("Tu rol no puede gestionar este tipo de aviso.", "error"); return; }
-    var author = ($("#g-author") || {}).value || ROLES[session().role].label;
-    var note = ($("#g-note") || {}).value || "";
-    var resolution = ($("#g-resolution") || {}).value || "";
-    if ((pickedStatus === "resuelto" || pickedStatus === "cerrado") && resolution.trim().length < 5) {
-      toast("Describí la acción realizada para resolver o cerrar el aviso.", "error");
+    var author = (($("#g-author") || {}).value || ROLES[session().role].label).trim();
+    var assignedTo = (($("#g-assignee") || {}).value || "").trim();
+    var note = (($("#g-note") || {}).value || "").trim();
+    var isClosing = pickedStatus === "cerrado" || pickedStatus === "resuelto";
+
+    if (isClosing && note.length < 5 && String(report.resolution || "").trim().length < 5) {
+      toast("Describí la acción realizada u observación para cerrar el aviso.", "error");
       return;
     }
-    var patch = { status: pickedStatus };
-    var event = { action: "estado", author: author, toStatus: pickedStatus, note: note };
-    if (pickedStatus === "resuelto" || pickedStatus === "cerrado") {
-      patch.resolution = resolution;
+
+    var statusChanged = pickedStatus !== report.status;
+    var assigneeChanged = assignedTo !== (report.assignedTo || "");
+    if (!statusChanged && !assigneeChanged && !note && !closePhotoData) {
+      toast("No realizaste ningún cambio para guardar.", "warn");
+      return;
+    }
+
+    var patch = { status: pickedStatus, assignedTo: assignedTo };
+    var parts = [];
+    if (assigneeChanged) {
+      parts.push(assignedTo ? "Responsable: " + assignedTo : "Se quitó el responsable");
+    }
+    if (isClosing) {
+      patch.resolution = note || report.resolution || "";
       patch.resolvedAt = report.resolvedAt || iso(new Date());
-      event.note = "Resolución: " + resolution + (note ? " · " + note : "");
+      if (note) parts.push("Cierre: " + note);
     } else {
       patch.resolvedAt = null;
+      if (note) parts.push(note);
     }
+
+    var evAction = statusChanged ? "estado" : (assigneeChanged && !note ? "asignacion" : "comentario");
+    var event = {
+      action: evAction,
+      author: author,
+      toStatus: statusChanged ? pickedStatus : null,
+      note: parts.join(" · ")
+    };
+
     if (closePhotoData) {
       var photoId = "ph-" + uid();
       var photoDataToUpload = closePhotoData;
       idbPut(photoId, photoDataToUpload).then(function () {
         report.photos.push({ id: photoId, kind: "cierre", caption: "Evidencia de cierre" });
-        addEvent(report, "evidencia", author, "Se adjuntó la foto de cierre.", null);
+        addEvent(report, "evidencia", author, "Se adjuntó foto de evidencia.", null);
         var evPhoto = report.events[report.events.length - 1];
         updateReport(code, patch, event);
         sbResolveReportId(code).then(function (rId) {
@@ -2478,13 +2491,13 @@
           sbInsertEvents(rId, [evPhoto]);
         });
         renderGestion(code);
-        toast("Estado y foto de cierre guardados.", "ok");
+        toast("Gestión y foto guardadas.", "ok");
       });
       return;
     }
     updateReport(code, patch, event);
     renderGestion(code);
-    toast("Estado actualizado: " + STATUSES[pickedStatus].label, "ok");
+    toast("Gestión guardada: " + STATUSES[pickedStatus].label, "ok");
   }
 
   function saveAssign(code) {
@@ -3120,11 +3133,8 @@
     if (action === "pick-status") {
       var status = actionEl.getAttribute("data-status");
       pickedStatus = status;
-      var resField = $("#resolution-field");
-      var photoField = $("#close-photo-field");
-      var needs = status === "resuelto" || status === "cerrado";
-      if (resField) resField.hidden = !needs;
-      if (photoField) photoField.hidden = !needs;
+      var reqMark = $("#g-note-req");
+      if (reqMark) reqMark.hidden = (status !== "cerrado");
       $$("#status-picker button").forEach(function (btn) { btn.classList.toggle("on", btn.getAttribute("data-status") === status); });
       return;
     }
