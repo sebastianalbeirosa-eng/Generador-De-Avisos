@@ -283,8 +283,8 @@
               <div class="wa-dispatch-box" id="wa-recipients-box">
                 <div class="wa-dispatch-head">
                   <div>
-                    <strong>¿A quiénes enviar el alerta por WhatsApp?</strong>
-                    <small>Elegí uno o varios supervisores. Al registrar el aviso se prepara el mensaje con todos los datos para cada seleccionado.</small>
+                    <strong>¿A quiénes enviar el alerta?</strong>
+                    <small>Abrí cada área o rol para seleccionar los supervisores. Recibirán el aviso por WhatsApp y/o por correo electrónico automático según los canales cargados.</small>
                   </div>
                 </div>
                 <div class="wa-rec-list" id="wa-rec-list"></div>
@@ -388,14 +388,14 @@
           </div>
           <p class="eyebrow">Acceso del sector</p>
           <h1 class="h2">Entrar al panel de gestión</h1>
-          <p class="muted-sm">Elegí tu rol e ingresá tu contraseña. Cada área gestiona sus avisos y el Administrador administra usuarios y canales.</p>
+          <p class="muted-sm">Seleccioná tu área e ingresá la contraseña del panel.</p>
           <form id="login-form" class="mt-4">
-            <span class="label">Rol / Área</span>
+            <span class="label">Panel / Área</span>
             <div class="role-cards" id="role-cards" role="group" aria-label="Área"></div>
             <div class="field mt-3">
               <label for="login-pin">Contraseña de acceso</label>
-              <input id="login-pin" type="password" autocomplete="current-password" maxlength="32" placeholder="Ingresá tu contraseña" />
-              <small class="help" id="login-hint">Si olvidaste tu contraseña, solicitá su recuperación al Administrador.</small>
+              <input id="login-pin" type="password" autocomplete="current-password" maxlength="64" placeholder="Ingresá tu contraseña" />
+              <small class="help" id="login-hint">Si olvidaste tu contraseña, pedile al Administrador que la restablezca.</small>
               <small class="error" id="login-error"></small>
             </div>
             <button class="btn btn-primary btn-block mt-3" type="submit">Ingresar al panel</button>
@@ -471,8 +471,8 @@
         <div class="banner banner-role mt-3" id="config-role-note" hidden></div>
 
         <div class="card card-pad mt-3">
-          <h2 class="h3">Supervisores y contactos de WhatsApp</h2>
-          <p class="muted-sm">Asigná cada número a una de las 3 áreas base (<strong>Mantenimiento</strong>, <strong>Producción para 5S</strong> o <strong>Seguridad e Higiene</strong>), o creá nuevas categorías personalizadas abajo si necesitás sumar otros sectores.</p>
+          <h2 class="h3">Receptores de avisos (WhatsApp y Email automático)</h2>
+          <p class="muted-sm">Cargá los supervisores o responsables de cada área con su WhatsApp y/o correo electrónico (podés sumar nuevas áreas o roles abajo). Se mostrarán ordenados en listas desplegables al cargar avisos.</p>
 
           <form id="sup-add-form" class="sup-form mt-3">
             <div class="grid-2 gap-sm">
@@ -481,14 +481,18 @@
                 <input id="sup-name" type="text" maxlength="70" placeholder="Ej.: Juan Pérez · Sup. Mantenimiento" />
               </div>
               <div class="field">
-                <label for="sup-phone">Número de WhatsApp <b>*</b></label>
-                <input id="sup-phone" type="tel" inputmode="tel" maxlength="24" placeholder="Ej.: 5492645550101" />
-              </div>
-              <div class="field">
-                <label for="sup-area">Responsabilidad / Categoría <b>*</b></label>
+                <label for="sup-area">Área / Rol que supervisa <b>*</b></label>
                 <select id="sup-area"></select>
               </div>
               <div class="field">
+                <label for="sup-phone">Número de WhatsApp <span class="opt">(sin + ni espacios)</span></label>
+                <input id="sup-phone" type="tel" inputmode="tel" maxlength="24" placeholder="Ej.: 5492645550101" />
+              </div>
+              <div class="field">
+                <label for="sup-email">Correo electrónico <span class="opt">(para aviso vía Resend)</span></label>
+                <input id="sup-email" type="email" maxlength="120" placeholder="Ej.: jperez@sanlorenzo.com" />
+              </div>
+              <div class="field" style="grid-column: 1 / -1;">
                 <label for="sup-shift">Turno asignado</label>
                 <select id="sup-shift">
                   <option value="Todos los turnos">Todos los turnos</option>
@@ -500,15 +504,15 @@
               </div>
             </div>
             <div class="row-actions mt-3">
-              <button class="btn btn-primary" type="submit">+ Agregar supervisor</button>
+              <button class="btn btn-primary" type="submit">+ Agregar receptor</button>
             </div>
           </form>
 
           <div class="custom-cat-box mt-3">
-            <label for="custom-area-name" class="label">¿Necesitás agregar otro rol o sector? <span class="opt">(queda guardado en el selector)</span></label>
+            <label for="custom-area-name" class="label">¿Necesitás agregar otro rol o área? <span class="opt">(queda guardado en el selector)</span></label>
             <form id="custom-area-form" class="custom-cat-row">
-              <input id="custom-area-name" type="text" maxlength="50" placeholder="Ej.: Supervisor de Moliendas, Hornos, Matricería…" />
-              <button class="btn btn-light" type="submit">+ Guardar rol</button>
+              <input id="custom-area-name" type="text" maxlength="50" placeholder="Ej.: Moliendas, Hornos, Matricería, Laboratorio…" />
+              <button class="btn btn-light" type="submit">+ Guardar área</button>
             </form>
             <div class="chips mt-2" id="custom-areas-list"></div>
           </div>
@@ -516,33 +520,21 @@
           <div class="sup-list mt-4" id="supervisors-list"></div>
         </div>
 
+        <div class="card card-pad mt-3">
+          <h2 class="h3">Contraseñas de paneles y blanqueo de claves</h2>
+          <p class="muted-sm">Las contraseñas de cada panel se guardan con cifrado irreversible <strong>bcrypt</strong> en Supabase. Nadie puede leer la clave de un jefe, pero si la olvida podés asignarle una clave temporal nueva. <strong>Requisito:</strong> más de 6 caracteres, al menos 1 mayúscula y 1 número.</p>
+
+          <div class="sup-list mt-3" id="users-list"></div>
+        </div>
+
         <form class="card card-pad mt-3" id="config-form">
-          <h2 class="h3">Contraseñas de roles y recuperación de accesos</h2>
-          <p class="muted-sm">Acá podés ver las contraseñas actuales que guardaron Producción, Mantenimiento y Seguridad para recuperarlas si las olvidan, o asignarles una nueva. <strong>Requisito para todos los roles:</strong> más de 6 caracteres, al menos 1 mayúscula y 1 número.</p>
-          <div class="grid-2 gap-sm mt-3">
-            <div class="field">
-              <label for="cfg-pin-admin">Contraseña · Administrador</label>
-              <input id="cfg-pin-admin" type="text" maxlength="32" autocomplete="off" />
-            </div>
-            <div class="field">
-              <label for="cfg-pin-produccion">Contraseña · Producción (5S)</label>
-              <input id="cfg-pin-produccion" type="text" maxlength="32" autocomplete="off" />
-            </div>
-            <div class="field">
-              <label for="cfg-pin-mantenimiento">Contraseña · Mantenimiento</label>
-              <input id="cfg-pin-mantenimiento" type="text" maxlength="32" autocomplete="off" />
-            </div>
-            <div class="field">
-              <label for="cfg-pin-seguridad">Contraseña · Seguridad</label>
-              <input id="cfg-pin-seguridad" type="text" maxlength="32" autocomplete="off" />
-            </div>
-            <div class="field" style="grid-column: 1 / -1;">
-              <label for="cfg-planta">Nombre de la empresa y planta</label>
-              <input id="cfg-planta" type="text" maxlength="80" />
-            </div>
+          <h2 class="h3">Datos generales de la planta</h2>
+          <div class="field mt-3">
+            <label for="cfg-planta">Nombre de la empresa y planta</label>
+            <input id="cfg-planta" type="text" maxlength="80" />
           </div>
           <div class="row-actions mt-3">
-            <button class="btn btn-primary" id="btn-save-config" type="submit">Guardar contraseñas y datos</button>
+            <button class="btn btn-primary" id="btn-save-config" type="submit">Guardar datos</button>
             <span class="muted-xs" id="config-saved"></span>
           </div>
         </form>
