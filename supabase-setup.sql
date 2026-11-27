@@ -69,14 +69,23 @@ alter table public.reports add constraint chk_reports_assigned_len check (char_l
 alter table public.reports drop constraint if exists chk_reports_recipients_arr;
 alter table public.reports add constraint chk_reports_recipients_arr check (jsonb_typeof(recipients) = 'array' and jsonb_array_length(recipients) <= 12);
 
--- Genera automáticamente el código PR-YYYY-XXXX si no se envía uno
+-- Genera automáticamente el código PR-YYYY-XXXX si no se envía uno (evitando colisiones)
 create or replace function public.set_report_code()
 returns trigger
 language plpgsql
 as $$
+declare
+  v_year text := to_char(coalesce(new.created_at, now()), 'YYYY');
+  v_seq bigint := coalesce(new.id, nextval('public.reports_seq'));
+  v_candidate text;
 begin
   if new.code is null or btrim(new.code) = '' then
-    new.code := 'PR-' || to_char(coalesce(new.created_at, now()), 'YYYY') || '-' || lpad(new.id::text, 4, '0');
+    loop
+      v_candidate := 'PR-' || v_year || '-' || lpad(v_seq::text, 4, '0');
+      exit when not exists (select 1 from public.reports r where r.code = v_candidate);
+      v_seq := v_seq + 1;
+    end loop;
+    new.code := v_candidate;
   end if;
   return new;
 end;
@@ -87,8 +96,18 @@ create trigger trg_reports_set_code
 before insert on public.reports
 for each row execute function public.set_report_code();
 
--- Sincronizar secuencia por si ya hay registros cargados
-select setval('public.reports_seq', coalesce((select max(id) from public.reports), 0) + 1, false);
+-- Sincronizar secuencias de reports (id y reports_seq) por si ya hay registros cargados
+do $$
+declare
+  v_id_seq text := pg_get_serial_sequence('public.reports', 'id');
+  v_next bigint;
+begin
+  select coalesce(max(id), 0) + 1 into v_next from public.reports;
+  if v_id_seq is not null then
+    execute format('select setval(%L, %s, false)', v_id_seq, v_next);
+  end if;
+  perform setval('public.reports_seq', v_next, false);
+end $$;
 
 create index if not exists idx_reports_created_at on public.reports (created_at desc);
 create index if not exists idx_reports_status on public.reports (status);

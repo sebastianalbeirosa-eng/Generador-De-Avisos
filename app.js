@@ -817,7 +817,7 @@
   function logout(silent) {
     var s = session();
     if (sb && s && s.token) {
-      sb.rpc("rpc_logout", { p_token: s.token }).catch(function () {});
+      sb.rpc("rpc_logout", { p_token: s.token }).then(function () {}, function () {});
     }
     sessionStorage.removeItem(SS_SESSION);
     renderSessionBox();
